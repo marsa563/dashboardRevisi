@@ -58,10 +58,6 @@ kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
 labels = kmeans.fit_predict(X_scaled)
 data_grouped['Cluster'] = labels + 1
 
-# Silhouette & DBI
-silhouette_avg = silhouette_score(X_scaled, labels)
-dbi = davies_bouldin_score(X_scaled, labels)
-
 # --- DATA EXPLODED ---
 data_final = pd.merge(
     data,
@@ -99,9 +95,9 @@ page = st.sidebar.radio("Pilih Halaman", ["Clustering Obat", "Analisis Curah Huj
 
 # ==================== CLUSTERING OBAT ====================
 if page == "Clustering Obat":
-    st.title("Clustering Obat")
+    st.title("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri")
 
-    st.subheader("Preview Data Mentah")
+    st.subheader("Preview Data")
     st.dataframe(data.head())
 
     st.subheader("Elbow Method")
@@ -210,7 +206,7 @@ if page == "Analisis Curah Hujan":
             top3['Use'] = use
             top3_list.append(top3)
         top3_df = pd.concat(top3_list)
-        st.write("Top 3 Item + Supplier per Fungsi Obat")
+        st.write("Rekomendasi Supplier")
         st.dataframe(top3_df)
     else:
         st.info("Tidak ada data untuk kombinasi ini.")
