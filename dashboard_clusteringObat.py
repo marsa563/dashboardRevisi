@@ -162,6 +162,26 @@ if page == "Clustering Obat":
 if page == "Analisis Curah Hujan":
     st.title("Analisis Curah Hujan")
 
+    data_hujan['TANGGAL'] = pd.to_datetime(data_hujan['TANGGAL'])
+    data_hujan['Month'] = data_hujan['TANGGAL'].dt.month
+    monthly_sum = data_hujan.groupby('Month')['RR'].sum().reset_index()
+    nama_bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    monthly_sum['MonthName'] = monthly_sum['Month'].apply(lambda x: nama_bulan[x - 1])
+
+    fig_line, ax = plt.subplots(figsize=(10,5))
+    ax.plot(monthly_sum['MonthName'], monthly_sum['RR'], marker='o', linewidth=2, color='darkgreen')
+    ax.set_title("Curah Hujan di Jakarta Pusat Tahun 2024")
+    ax.set_xlabel("Bulan")
+    ax.set_ylabel("Curah Hujan (RR)")
+    ax.grid(True)
+    ax.axhline(100, color='red', linestyle='--', label='Batas Rendah')
+    ax.axhline(300, color='orange', linestyle='--', label='Batas Menengah')
+    ax.axhline(500, color='green', linestyle='--', label='Batas Tinggi')
+    ax.legend()
+    st.pyplot(fig_line)
+
+    st.title("Analisis Curah Hujan per Cluster")
+    
     cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
     kategori = st.selectbox("Pilih Kategori Curah Hujan", ['RENDAH', 'MENENGAH', 'TINGGI', 'SANGAT TINGGI'])
 
