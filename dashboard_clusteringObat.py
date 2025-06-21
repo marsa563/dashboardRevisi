@@ -156,33 +156,36 @@ if page == "Analisis Curah Hujan":
     ax.legend()
     st.pyplot(fig_line)
 
-    # Analisis per cluster
-    cluster_pick = st.selectbox("Pilih Cluster", [1,2,3])
-    kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
+# --- Analisis curah hujan ---
+st.subheader("Analisis Curah Hujan per Cluster")
+cluster_pick = st.selectbox("Pilih Cluster", sorted(data_final['Cluster'].unique()))
+kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
 
-    item_month = data[['Item', 'Invoice Date']].drop_duplicates()
-    item_month['Month'] = pd.to_datetime(item_month['Invoice Date']).dt.month
-    data_grouped = data.groupby(['Item', 'Supplier', 'Use'], as_index=False).agg({'Qty':'sum', 'Item Amount':'sum'})
-    data_grouped['Cluster'] = cluster_pick  # Sementara untuk placeholder; ganti sesuai cluster sesungguhnya jika sudah ada mapping
-    data_final = data_grouped.merge(item_month, on='Item', how='left')
-    data_final = data_final.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
+if kategori == 'Rendah':
+    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] < 100)]
+elif kategori == 'Menengah':
+    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] >= 100) & (data_final['RR_BULAN'] <= 300)]
+elif kategori == 'Tinggi':
+    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] > 300) & (data_final['RR_BULAN'] <= 500)]
+else:
+    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] > 500)]
 
-    if kategori == 'Rendah':
-        df_filtered = data_final[data_final['RR'] < 100]
-    elif kategori == 'Menengah':
-        df_filtered = data_final[(data_final['RR'] >= 100) & (data_final['RR'] <= 300)]
-    elif kategori == 'Tinggi':
-        df_filtered = data_final[(data_final['RR'] > 300) & (data_final['RR'] <= 500)]
-    else:
-        df_filtered = data_final[data_final['RR'] > 500]
+if not df_filtered.empty:
+    use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
+    st.write("Top 10 Fungsi Obat (Use)")
+    fig2, ax2 = plt.subplots(figsize=(10,5))
+    sns.barplot(data=use_qty, x='Use', y='Qty', palette='viridis', ax=ax2)
+    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right')
+    st.pyplot(fig2)
+    st.dataframe(use_qty)
 
-    if not df_filtered.empty:
-        use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
-        fig_use, ax = plt.subplots(figsize=(8,4))
-        sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[str(cluster_pick)]]*len(use_qty), ax=ax)
-        ax.set_title(f"Top 10 Fungsi Obat Cluster {cluster_pick} - {kategori}")
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-        st.pyplot(fig_use)
-        st.dataframe(use_qty)
-    else:
-        st.info("Tidak ada data untuk kombinasi ini.")
+    top3_list = []
+    for use in use_qty['Use']:
+        top3 = df_filtered[df_filtered['Use'] == use].groupby(['Item', 'Supplier'])['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(3)
+        top3['Use'] = use
+        top3_list.append(top3)
+    top3_df = pd.concat(top3_list)
+    st.write("Top 3 Item + Supplier per Fungsi Obat")
+    st.dataframe(top3_df)
+else:
+    st.info("Tidak ada data untuk kombinasi ini.")
