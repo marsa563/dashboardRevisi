@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 
 # Palet warna cluster
 cluster_palette = {
@@ -56,6 +57,10 @@ X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV 
 kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
 labels = kmeans.fit_predict(X_scaled)
 data_grouped['Cluster'] = labels + 1
+
+# Silhouette & DBI
+silhouette_avg = silhouette_score(X_scaled, labels)
+dbi = davies_bouldin_score(X_scaled, labels)
 
 # --- DATA EXPLODED ---
 data_final = pd.merge(
@@ -117,16 +122,17 @@ if page == "Clustering Obat":
     st.write(cluster_counts)
 
     fig_pie, ax = plt.subplots()
-    ax.pie(cluster_counts, labels=[f"Cluster {i}" for i in cluster_counts.index],
+    ax.pie(cluster_counts, 
+           labels=[f"Cluster {i}" for i in cluster_counts.index],
            autopct='%1.1f%%',
-           colors=[cluster_palette[str(i)] for i in cluster_counts.index])
+           colors=[cluster_palette[int(i)] for i in cluster_counts.index])
     ax.set_title("Distribusi Cluster")
     st.pyplot(fig_pie)
 
     st.write(f"Silhouette Score: {silhouette_avg:.4f}")
     st.write(f"Davies-Bouldin Index: {dbi:.4f}")
 
-    mean_data = data_grouped.groupby('Cluster_str').agg({
+    mean_data = data_grouped.groupby('Cluster').agg({
         'Qty': 'mean',
         'Item Amount': 'mean',
         'CV (%)': 'mean',
@@ -138,7 +144,8 @@ if page == "Clustering Obat":
     st.subheader("Bar Chart Perbandingan Fitur per Cluster")
     for col in ['Qty', 'Item Amount', 'CV (%)', 'Jumlah Bulan Muncul']:
         fig_bar, ax = plt.subplots()
-        sns.barplot(data=mean_data, x='Cluster_str', y=col, palette=cluster_palette, ax=ax)
+        sns.barplot(data=mean_data, x='Cluster', y=col,
+                    palette=[cluster_palette[int(i)] for i in mean_data['Cluster']], ax=ax)
         ax.set_title(f"Rata-rata {col} per Cluster")
         st.pyplot(fig_bar)
 
