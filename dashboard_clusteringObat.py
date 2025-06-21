@@ -7,11 +7,11 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
-# Warna cluster
+# Palet warna cluster (key string agar konsisten)
 cluster_palette = {
-    1: '#1f77b4',
-    2: '#ff7f0e',
-    3: '#2ca02c'
+    '1': '#1f77b4',
+    '2': '#ff7f0e',
+    '3': '#2ca02c'
 }
 
 # --- Load data ---
@@ -25,17 +25,16 @@ def load_data():
 
 data, data_hujan = load_data()
 
-# Tabs
-tab1, tab2 = st.tabs(["Clustering Obat", "Analisis Curah Hujan"])
+# Sidebar navigation
+page = st.sidebar.radio(["Clustering Obat", "Analisis Curah Hujan"])
 
-# ==================== TAB CLUSTERING OBAT ====================
-with tab1:
+# =================== CLUSTERING OBAT ===================
+if page == "Clustering Obat":
     st.title("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri")
 
-    st.subheader("Preview Data Mentah")
+    st.subheader("Preview Data")
     st.dataframe(data.head())
 
-    # --- Preprocessing ---
     selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
     data_selected = data[selected_columns]
     data_selected = data_selected[
@@ -59,7 +58,6 @@ with tab1:
         as_index=False
     ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
 
-    # --- Transformasi Log + Normalisasi ---
     data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
     data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
     data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
@@ -67,7 +65,7 @@ with tab1:
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
 
-    # --- Elbow Method ---
+    # Elbow Method
     sse = []
     for k in range(1, 9):
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -81,10 +79,11 @@ with tab1:
     ax.set_title("Elbow Method")
     st.pyplot(fig_elbow)
 
-    # --- KMeans clustering ---
+    # KMeans Clustering
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     labels = kmeans.fit_predict(X_scaled)
     data_grouped['Cluster'] = labels + 1
+    data_grouped['Cluster_str'] = data_grouped['Cluster'].astype(str)
 
     silhouette_avg = silhouette_score(X_scaled, labels)
     dbi = davies_bouldin_score(X_scaled, labels)
@@ -96,14 +95,15 @@ with tab1:
 
     fig_pie, ax = plt.subplots()
     ax.pie(cluster_counts, labels=[f"Cluster {i}" for i in cluster_counts.index],
-           autopct='%1.1f%%', colors=[cluster_palette[i] for i in cluster_counts.index])
+           autopct='%1.1f%%',
+           colors=[cluster_palette[str(i)] for i in cluster_counts.index])
     ax.set_title("Distribusi Cluster")
     st.pyplot(fig_pie)
 
     st.write(f"Silhouette Score: {silhouette_avg:.4f}")
     st.write(f"Davies-Bouldin Index: {dbi:.4f}")
 
-    mean_data = data_grouped.groupby('Cluster').agg({
+    mean_data = data_grouped.groupby('Cluster_str').agg({
         'Qty': 'mean',
         'Item Amount': 'mean',
         'CV (%)': 'mean',
@@ -112,29 +112,26 @@ with tab1:
     st.write("Rata-rata Fitur per Cluster")
     st.dataframe(mean_data)
 
-    # --- Bar chart per variabel ---
     st.subheader("Bar Chart Perbandingan Fitur per Cluster")
     for col in ['Qty', 'Item Amount', 'CV (%)', 'Jumlah Bulan Muncul']:
         fig_bar, ax = plt.subplots()
-        sns.barplot(data=mean_data, x='Cluster', y=col, palette=cluster_palette, ax=ax)
+        sns.barplot(data=mean_data, x='Cluster_str', y=col, palette=cluster_palette, ax=ax)
         ax.set_title(f"Rata-rata {col} per Cluster")
         st.pyplot(fig_bar)
 
-    # --- Top 10 Fungsi Obat per Cluster ---
     st.subheader("Top 10 Fungsi Obat per Cluster")
     for cl in sorted(data_grouped['Cluster'].unique()):
         use_qty = data_grouped[data_grouped['Cluster'] == cl].groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
         fig_top, ax = plt.subplots(figsize=(8,4))
-        sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[cl]]*len(use_qty), ax=ax)
+        sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[str(cl)]]*len(use_qty), ax=ax)
         ax.set_title(f"Top 10 Fungsi Obat Cluster {cl}")
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig_top)
 
-# ==================== TAB CURAH HUJAN ====================
-with tab2:
+# =================== ANALISIS CURAH HUJAN ===================
+elif page == "Analisis Curah Hujan":
     st.title("Analisis Curah Hujan per Cluster")
 
-    # Line Chart Curah Hujan
     data_hujan['TANGGAL'] = pd.to_datetime(data_hujan['TANGGAL'])
     data_hujan['Month'] = data_hujan['TANGGAL'].dt.month
     monthly_sum = data_hujan.groupby('Month')['RR'].sum().reset_index()
@@ -153,10 +150,36 @@ with tab2:
     ax.legend()
     st.pyplot(fig_line)
 
-    # Analisis per cluster dan kategori
+    # Analisis per cluster
+    selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
+    data_selected = data[selected_columns]
+    data_selected['Month'] = pd.to_datetime(data_selected['Invoice Date']).dt.month
+
+    qty_bulanan = data_selected.groupby(['Item', 'Month'])['Qty'].sum().reset_index()
+    stabilitas = qty_bulanan.groupby('Item')['Qty'].agg(['mean', 'std']).reset_index()
+    stabilitas['CV (%)'] = (stabilitas['std'] / stabilitas['mean']) * 100
+    bulan_aktif = qty_bulanan.groupby('Item')['Month'].nunique().reset_index()
+    stabilitas = stabilitas.merge(bulan_aktif, on='Item', how='left')
+    data_selected = data_selected.merge(stabilitas, on='Item', how='left')
+    data_selected['CV (%)'] = data_selected['CV (%)'].fillna(80)
+
+    data_grouped = data_selected.drop(columns=['Month']).groupby(
+        ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
+        as_index=False
+    ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
+    data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
+    data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
+    data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
+    kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+    labels = kmeans.fit_predict(X_scaled)
+    data_grouped['Cluster'] = labels + 1
+
     item_month = data_selected[['Item', 'Month']].drop_duplicates()
     data_final = data_grouped.merge(item_month, on='Item', how='left')
     data_final = data_final.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
+
     cluster_pick = st.selectbox("Pilih Cluster", sorted(data_final['Cluster'].unique()))
     kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
 
@@ -172,7 +195,7 @@ with tab2:
     if not df_filtered.empty:
         use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
         fig_use, ax = plt.subplots(figsize=(8,4))
-        sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[cluster_pick]]*len(use_qty), ax=ax)
+        sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[str(cluster_pick)]]*len(use_qty), ax=ax)
         ax.set_title(f"Top 10 Fungsi Obat Cluster {cluster_pick} - {kategori}")
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig_use)
