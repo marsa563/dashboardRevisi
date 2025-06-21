@@ -7,8 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-st.title("Dashboard Clustering Obat & Analisis Curah Hujan")
+st.title("Analisis Segmentasi Penjualan Obat Menggunakan Metode K-Means")
 
 # --- Load data obat ---
 url_obat = "https://docs.google.com/spreadsheets/d/188yRPLfbuGmT3A6WIJe-8pAUtBTljdutDD7HxG-iGSI/export?format=csv"
