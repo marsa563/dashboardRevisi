@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
-# Warna cluster
+# Palet warna cluster (pakai string untuk konsisten dengan seaborn)
 cluster_palette = {
     '1': '#1f77b4',
     '2': '#ff7f0e',
@@ -25,14 +25,14 @@ def load_data():
 
 data, data_hujan = load_data()
 
-# Sidebar nav
-page = st.sidebar.radio("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri", ["Clustering Obat", "Analisis Curah Hujan"])
+# Sidebar page selector
+page = st.sidebar.radio("Pilih Halaman", ["Clustering Obat", "Analisis Curah Hujan"])
 
 # =================== CLUSTERING OBAT ===================
 if page == "Clustering Obat":
-    st.title("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri")
+    st.title("Dashboard Clustering Obat")
 
-    st.subheader("Preview Data")
+    st.subheader("Preview Data Mentah")
     st.dataframe(data.head())
 
     selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
@@ -53,16 +53,10 @@ if page == "Clustering Obat":
     data_selected = data_selected.merge(stabilitas, on='Item', how='left')
     data_selected['CV (%)'] = data_selected['CV (%)'].fillna(80)
 
-    if 'Month' in data_selected.columns:
-        data_grouped = data_selected.drop(columns=['Month']).groupby(
-            ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
-            as_index=False
-        ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
-    else:
-        data_grouped = data_selected.groupby(
-            ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
-            as_index=False
-        ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
+    data_grouped = data_selected.drop(columns=['Month']).groupby(
+        ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
+        as_index=False
+    ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
 
     data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
     data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
@@ -71,7 +65,7 @@ if page == "Clustering Obat":
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
 
-    # Elbow
+    # Elbow Method
     sse = []
     for k in range(1, 9):
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -85,7 +79,7 @@ if page == "Clustering Obat":
     ax.set_title("Elbow Method")
     st.pyplot(fig_elbow)
 
-    # KMeans
+    # KMeans clustering
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     labels = kmeans.fit_predict(X_scaled)
     data_grouped['Cluster'] = labels + 1
@@ -134,7 +128,7 @@ if page == "Clustering Obat":
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig_top)
 
-# =================== CURAH HUJAN ===================
+# =================== ANALISIS CURAH HUJAN ===================
 if page == "Analisis Curah Hujan":
     st.title("Analisis Curah Hujan")
 
@@ -156,36 +150,32 @@ if page == "Analisis Curah Hujan":
     ax.legend()
     st.pyplot(fig_line)
 
-# --- Analisis curah hujan ---
-st.subheader("Analisis Curah Hujan per Cluster")
-cluster_pick = st.selectbox("Pilih Cluster", sorted(data_final['Cluster'].unique()))
-kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
+    # Gabungkan data_exploded
+    item_month = data[['Item', 'Invoice Date']].drop_duplicates()
+    item_month['Month'] = pd.to_datetime(item_month['Invoice Date']).dt.month
 
-if kategori == 'Rendah':
-    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] < 100)]
-elif kategori == 'Menengah':
-    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] >= 100) & (data_final['RR_BULAN'] <= 300)]
-elif kategori == 'Tinggi':
-    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] > 300) & (data_final['RR_BULAN'] <= 500)]
-else:
-    df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR_BULAN'] > 500)]
+    data_exploded = data_grouped.merge(item_month, on='Item', how='left')
+    data_exploded = data_exploded.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
 
-if not df_filtered.empty:
-    use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
-    st.write("Top 10 Fungsi Obat (Use)")
-    fig2, ax2 = plt.subplots(figsize=(10,5))
-    sns.barplot(data=use_qty, x='Use', y='Qty', palette='viridis', ax=ax2)
-    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right')
-    st.pyplot(fig2)
-    st.dataframe(use_qty)
+    cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
+    kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
 
-    top3_list = []
-    for use in use_qty['Use']:
-        top3 = df_filtered[df_filtered['Use'] == use].groupby(['Item', 'Supplier'])['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(3)
-        top3['Use'] = use
-        top3_list.append(top3)
-    top3_df = pd.concat(top3_list)
-    st.write("Top 3 Item + Supplier per Fungsi Obat")
-    st.dataframe(top3_df)
-else:
-    st.info("Tidak ada data untuk kombinasi ini.")
+    if kategori == 'Rendah':
+        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] < 100)]
+    elif kategori == 'Menengah':
+        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] >= 100) & (data_exploded['RR'] <= 300)]
+    elif kategori == 'Tinggi':
+        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] > 300) & (data_exploded['RR'] <= 500)]
+    else:
+        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] > 500)]
+
+    if not df_filtered.empty:
+        use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
+        fig_use, ax = plt.subplots(figsize=(8,4))
+        sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[str(cluster_pick)]]*len(use_qty), ax=ax)
+        ax.set_title(f"Top 10 Fungsi Obat Cluster {cluster_pick} - {kategori}")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+        st.pyplot(fig_use)
+        st.dataframe(use_qty)
+    else:
+        st.info("Tidak ada data untuk kombinasi ini.")
