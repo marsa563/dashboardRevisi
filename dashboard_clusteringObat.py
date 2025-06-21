@@ -26,7 +26,7 @@ def load_data():
 data, data_hujan = load_data()
 
 # Sidebar navigation
-page = st.sidebar.radio(["Clustering Obat", "Analisis Curah Hujan"])
+page = st.sidebar.radio("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri", ["Clustering Obat", "Analisis Curah Hujan"])
 
 # =================== CLUSTERING OBAT ===================
 if page == "Clustering Obat":
