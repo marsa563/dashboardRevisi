@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
-# Palet warna cluster (key string agar konsisten)
+# Warna cluster
 cluster_palette = {
     '1': '#1f77b4',
     '2': '#ff7f0e',
@@ -25,7 +25,7 @@ def load_data():
 
 data, data_hujan = load_data()
 
-# Sidebar navigation
+# Sidebar nav
 page = st.sidebar.radio("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri", ["Clustering Obat", "Analisis Curah Hujan"])
 
 # =================== CLUSTERING OBAT ===================
@@ -53,10 +53,16 @@ if page == "Clustering Obat":
     data_selected = data_selected.merge(stabilitas, on='Item', how='left')
     data_selected['CV (%)'] = data_selected['CV (%)'].fillna(80)
 
-    data_grouped = data_selected.drop(columns=['Month']).groupby(
-        ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
-        as_index=False
-    ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
+    if 'Month' in data_selected.columns:
+        data_grouped = data_selected.drop(columns=['Month']).groupby(
+            ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
+            as_index=False
+        ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
+    else:
+        data_grouped = data_selected.groupby(
+            ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
+            as_index=False
+        ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
 
     data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
     data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
@@ -65,7 +71,7 @@ if page == "Clustering Obat":
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
 
-    # Elbow Method
+    # Elbow
     sse = []
     for k in range(1, 9):
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -79,7 +85,7 @@ if page == "Clustering Obat":
     ax.set_title("Elbow Method")
     st.pyplot(fig_elbow)
 
-    # KMeans Clustering
+    # KMeans
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     labels = kmeans.fit_predict(X_scaled)
     data_grouped['Cluster'] = labels + 1
@@ -128,9 +134,9 @@ if page == "Clustering Obat":
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig_top)
 
-# =================== ANALISIS CURAH HUJAN ===================
-elif page == "Analisis Curah Hujan":
-    st.title("Analisis Curah Hujan per Cluster")
+# =================== CURAH HUJAN ===================
+if page == "Analisis Curah Hujan":
+    st.title("Analisis Curah Hujan")
 
     data_hujan['TANGGAL'] = pd.to_datetime(data_hujan['TANGGAL'])
     data_hujan['Month'] = data_hujan['TANGGAL'].dt.month
@@ -151,46 +157,24 @@ elif page == "Analisis Curah Hujan":
     st.pyplot(fig_line)
 
     # Analisis per cluster
-    selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
-    data_selected = data[selected_columns]
-    data_selected['Month'] = pd.to_datetime(data_selected['Invoice Date']).dt.month
+    cluster_pick = st.selectbox("Pilih Cluster", [1,2,3])
+    kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
 
-    qty_bulanan = data_selected.groupby(['Item', 'Month'])['Qty'].sum().reset_index()
-    stabilitas = qty_bulanan.groupby('Item')['Qty'].agg(['mean', 'std']).reset_index()
-    stabilitas['CV (%)'] = (stabilitas['std'] / stabilitas['mean']) * 100
-    bulan_aktif = qty_bulanan.groupby('Item')['Month'].nunique().reset_index()
-    stabilitas = stabilitas.merge(bulan_aktif, on='Item', how='left')
-    data_selected = data_selected.merge(stabilitas, on='Item', how='left')
-    data_selected['CV (%)'] = data_selected['CV (%)'].fillna(80)
-
-    data_grouped = data_selected.drop(columns=['Month']).groupby(
-        ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
-        as_index=False
-    ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
-    data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
-    data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
-    data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
-    kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
-    labels = kmeans.fit_predict(X_scaled)
-    data_grouped['Cluster'] = labels + 1
-
-    item_month = data_selected[['Item', 'Month']].drop_duplicates()
+    item_month = data[['Item', 'Invoice Date']].drop_duplicates()
+    item_month['Month'] = pd.to_datetime(item_month['Invoice Date']).dt.month
+    data_grouped = data.groupby(['Item', 'Supplier', 'Use'], as_index=False).agg({'Qty':'sum', 'Item Amount':'sum'})
+    data_grouped['Cluster'] = cluster_pick  # Sementara untuk placeholder; ganti sesuai cluster sesungguhnya jika sudah ada mapping
     data_final = data_grouped.merge(item_month, on='Item', how='left')
     data_final = data_final.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
 
-    cluster_pick = st.selectbox("Pilih Cluster", sorted(data_final['Cluster'].unique()))
-    kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
-
     if kategori == 'Rendah':
-        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] < 100)]
+        df_filtered = data_final[data_final['RR'] < 100]
     elif kategori == 'Menengah':
-        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] >= 100) & (data_final['RR'] <= 300)]
+        df_filtered = data_final[(data_final['RR'] >= 100) & (data_final['RR'] <= 300)]
     elif kategori == 'Tinggi':
-        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] > 300) & (data_final['RR'] <= 500)]
+        df_filtered = data_final[(data_final['RR'] > 300) & (data_final['RR'] <= 500)]
     else:
-        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] > 500)]
+        df_filtered = data_final[data_final['RR'] > 500]
 
     if not df_filtered.empty:
         use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
