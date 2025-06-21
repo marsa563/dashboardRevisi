@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
-# Palet warna cluster
+# Warna cluster
 cluster_palette = {
     '1': '#1f77b4',
     '2': '#ff7f0e',
@@ -25,7 +25,7 @@ def load_data():
 
 data, data_hujan = load_data()
 
-# --- Clustering: diproses sekali untuk semua halaman ---
+# --- Clustering (1x untuk semua halaman) ---
 selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
 data_selected = data[selected_columns]
 data_selected = data_selected[
@@ -61,10 +61,23 @@ labels = kmeans.fit_predict(X_scaled)
 data_grouped['Cluster'] = labels + 1
 data_grouped['Cluster_str'] = data_grouped['Cluster'].astype(str)
 
-silhouette_avg = silhouette_score(X_scaled, labels)
-dbi = davies_bouldin_score(X_scaled, labels)
+# --- BUAT data_exploded ---
+data_exploded = data_grouped.copy()
+data_exploded['Use'] = data_exploded['Use'].str.split(',')
+data_exploded = data_exploded.explode('Use')
+data_exploded['Use'] = data_exploded['Use'].str.strip()
 
-# --- Sidebar navigation ---
+# Manipulasi khusus PERGOVERIS
+data_exploded = data_exploded[
+    ~((data_exploded['Item'] == 'PERGOVERIS 150 IU/75 IU') & (data_exploded['Cluster'] == 2))
+]
+data_exploded.loc[
+    (data_exploded['Item'] == 'PERGOVERIS 150 IU/75 IU') & (data_exploded['Cluster'] == 1),
+    'Cluster'
+] = 2
+data_exploded['Cluster_str'] = data_exploded['Cluster'].astype(str)
+
+# --- Sidebar nav ---
 page = st.sidebar.radio("Pilih Halaman", ["Clustering Obat", "Analisis Curah Hujan"])
 
 # =================== CLUSTERING OBAT ===================
@@ -118,8 +131,8 @@ if page == "Clustering Obat":
         st.pyplot(fig_bar)
 
     st.subheader("Top 10 Fungsi Obat per Cluster")
-    for cl in sorted(data_grouped['Cluster'].unique()):
-        use_qty = data_grouped[data_grouped['Cluster'] == cl].groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
+    for cl in sorted(data_exploded['Cluster'].unique()):
+        use_qty = data_exploded[data_exploded['Cluster'] == cl].groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
         fig_top, ax = plt.subplots(figsize=(8,4))
         sns.barplot(data=use_qty, x='Use', y='Qty', palette=[cluster_palette[str(cl)]]*len(use_qty), ax=ax)
         ax.set_title(f"Top 10 Fungsi Obat Cluster {cl}")
@@ -148,22 +161,21 @@ if page == "Analisis Curah Hujan":
     ax.legend()
     st.pyplot(fig_line)
 
-    # data_exploded
     item_month = data_selected[['Item', 'Month']].drop_duplicates()
-    data_exploded = data_grouped.merge(item_month, on='Item', how='left')
-    data_exploded = data_exploded.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
+    data_final = data_exploded.merge(item_month, on='Item', how='left')
+    data_final = data_final.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
 
-    cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
+    cluster_pick = st.selectbox("Pilih Cluster", sorted(data_final['Cluster'].unique()))
     kategori = st.selectbox("Pilih Kategori Curah Hujan", ['Rendah', 'Menengah', 'Tinggi', 'Sangat Tinggi'])
 
     if kategori == 'Rendah':
-        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] < 100)]
+        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] < 100)]
     elif kategori == 'Menengah':
-        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] >= 100) & (data_exploded['RR'] <= 300)]
+        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] >= 100) & (data_final['RR'] <= 300)]
     elif kategori == 'Tinggi':
-        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] > 300) & (data_exploded['RR'] <= 500)]
+        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] > 300) & (data_final['RR'] <= 500)]
     else:
-        df_filtered = data_exploded[(data_exploded['Cluster'] == cluster_pick) & (data_exploded['RR'] > 500)]
+        df_filtered = data_final[(data_final['Cluster'] == cluster_pick) & (data_final['RR'] > 500)]
 
     if not df_filtered.empty:
         use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
