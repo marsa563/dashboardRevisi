@@ -125,9 +125,6 @@ if page == "Clustering Obat":
     ax.set_title("Distribusi Cluster")
     st.pyplot(fig_pie)
 
-    st.write(f"Silhouette Score: {silhouette_avg:.4f}")
-    st.write(f"Davies-Bouldin Index: {dbi:.4f}")
-
     mean_data = data_grouped.groupby('Cluster').agg({
         'Qty': 'mean',
         'Item Amount': 'mean',
