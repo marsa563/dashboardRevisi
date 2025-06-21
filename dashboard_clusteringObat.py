@@ -99,23 +99,48 @@ if page == "Clustering Obat":
     st.subheader("Preview Data Mentah")
     st.dataframe(data.head())
 
-    st.subheader("Distribusi Cluster")
-    cluster_counts = data_grouped['Cluster'].value_counts().sort_index()
-    st.bar_chart(cluster_counts)
-    st.dataframe(cluster_counts.reset_index().rename(columns={'index': 'Cluster', 'Cluster': 'Jumlah'}))
-
-    st.subheader("Elbow Method (SSE)")
+    st.subheader("Elbow Method")
     sse = []
     for k in range(1, 9):
-        km = KMeans(n_clusters=k, random_state=42, n_init=10)
-        km.fit(X_scaled)
-        sse.append(km.inertia_)
-    fig, ax = plt.subplots()
+        kmeans_tmp = KMeans(n_clusters=k, random_state=42, n_init=10)
+        kmeans_tmp.fit(X_scaled)
+        sse.append(kmeans_tmp.inertia_)
+    fig_elbow, ax = plt.subplots()
     ax.plot(range(1,9), sse, marker='o', linestyle='--')
-    ax.set_xlabel('Jumlah Cluster')
-    ax.set_ylabel('SSE')
-    ax.set_title('Elbow Method')
-    st.pyplot(fig)
+    ax.set_xlabel("Jumlah Cluster")
+    ax.set_ylabel("SSE")
+    ax.set_title("Elbow Method")
+    st.pyplot(fig_elbow)
+
+    st.subheader("Hasil Clustering")
+    cluster_counts = data_grouped['Cluster'].value_counts().sort_index()
+    st.write(cluster_counts)
+
+    fig_pie, ax = plt.subplots()
+    ax.pie(cluster_counts, labels=[f"Cluster {i}" for i in cluster_counts.index],
+           autopct='%1.1f%%',
+           colors=[cluster_palette[str(i)] for i in cluster_counts.index])
+    ax.set_title("Distribusi Cluster")
+    st.pyplot(fig_pie)
+
+    st.write(f"Silhouette Score: {silhouette_avg:.4f}")
+    st.write(f"Davies-Bouldin Index: {dbi:.4f}")
+
+    mean_data = data_grouped.groupby('Cluster_str').agg({
+        'Qty': 'mean',
+        'Item Amount': 'mean',
+        'CV (%)': 'mean',
+        'Jumlah Bulan Muncul': 'mean'
+    }).reset_index()
+    st.write("Rata-rata Fitur per Cluster")
+    st.dataframe(mean_data)
+
+    st.subheader("Bar Chart Perbandingan Fitur per Cluster")
+    for col in ['Qty', 'Item Amount', 'CV (%)', 'Jumlah Bulan Muncul']:
+        fig_bar, ax = plt.subplots()
+        sns.barplot(data=mean_data, x='Cluster_str', y=col, palette=cluster_palette, ax=ax)
+        ax.set_title(f"Rata-rata {col} per Cluster")
+        st.pyplot(fig_bar)
 
     st.subheader("Top 10 Fungsi Obat per Cluster")
     for cl in sorted(data_exploded['Cluster'].unique()):
