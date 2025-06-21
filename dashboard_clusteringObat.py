@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
-# Palet warna cluster (pakai string untuk konsisten dengan seaborn)
+# Palet warna cluster
 cluster_palette = {
     '1': '#1f77b4',
     '2': '#ff7f0e',
@@ -25,7 +25,46 @@ def load_data():
 
 data, data_hujan = load_data()
 
-# Sidebar page selector
+# --- Clustering: diproses sekali untuk semua halaman ---
+selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
+data_selected = data[selected_columns]
+data_selected = data_selected[
+    ~data_selected['Item'].str.contains('Racikan', case=False, na=False)
+]
+data_selected = data_selected[data_selected['Qty'] > 0]
+data_selected['Month'] = pd.to_datetime(data_selected['Invoice Date']).dt.month
+
+qty_bulanan = data_selected.groupby(['Item', 'Month'])['Qty'].sum().reset_index()
+stabilitas = qty_bulanan.groupby('Item')['Qty'].agg(['mean', 'std']).reset_index()
+stabilitas['CV (%)'] = (stabilitas['std'] / stabilitas['mean']) * 100
+stabilitas = stabilitas[['Item', 'CV (%)']]
+bulan_aktif = qty_bulanan.groupby('Item')['Month'].nunique().reset_index()
+bulan_aktif.rename(columns={'Month': 'Jumlah Bulan Muncul'}, inplace=True)
+stabilitas = stabilitas.merge(bulan_aktif, on='Item', how='left')
+data_selected = data_selected.merge(stabilitas, on='Item', how='left')
+data_selected['CV (%)'] = data_selected['CV (%)'].fillna(80)
+
+data_grouped = data_selected.drop(columns=['Month']).groupby(
+    ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
+    as_index=False
+).agg({'Qty': 'sum', 'Item Amount': 'sum'})
+
+data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
+data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
+data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
+
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+labels = kmeans.fit_predict(X_scaled)
+data_grouped['Cluster'] = labels + 1
+data_grouped['Cluster_str'] = data_grouped['Cluster'].astype(str)
+
+silhouette_avg = silhouette_score(X_scaled, labels)
+dbi = davies_bouldin_score(X_scaled, labels)
+
+# --- Sidebar navigation ---
 page = st.sidebar.radio("Pilih Halaman", ["Clustering Obat", "Analisis Curah Hujan"])
 
 # =================== CLUSTERING OBAT ===================
@@ -35,62 +74,21 @@ if page == "Clustering Obat":
     st.subheader("Preview Data Mentah")
     st.dataframe(data.head())
 
-    selected_columns = ['Invoice Date', 'Item', 'Qty', 'Item Amount', 'Supplier', 'Use']
-    data_selected = data[selected_columns]
-    data_selected = data_selected[
-        ~data_selected['Item'].str.contains('Racikan', case=False, na=False)
-    ]
-    data_selected = data_selected[data_selected['Qty'] > 0]
-    data_selected['Month'] = pd.to_datetime(data_selected['Invoice Date']).dt.month
-
-    qty_bulanan = data_selected.groupby(['Item', 'Month'])['Qty'].sum().reset_index()
-    stabilitas = qty_bulanan.groupby('Item')['Qty'].agg(['mean', 'std']).reset_index()
-    stabilitas['CV (%)'] = (stabilitas['std'] / stabilitas['mean']) * 100
-    stabilitas = stabilitas[['Item', 'CV (%)']]
-    bulan_aktif = qty_bulanan.groupby('Item')['Month'].nunique().reset_index()
-    bulan_aktif.rename(columns={'Month': 'Jumlah Bulan Muncul'}, inplace=True)
-    stabilitas = stabilitas.merge(bulan_aktif, on='Item', how='left')
-    data_selected = data_selected.merge(stabilitas, on='Item', how='left')
-    data_selected['CV (%)'] = data_selected['CV (%)'].fillna(80)
-
-    data_grouped = data_selected.drop(columns=['Month']).groupby(
-        ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
-        as_index=False
-    ).agg({'Qty': 'sum', 'Item Amount': 'sum'})
-
-    data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
-    data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
-    data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
-
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
-
-    # Elbow Method
+    st.subheader("Elbow Method")
     sse = []
     for k in range(1, 9):
-        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
-        kmeans.fit(X_scaled)
-        sse.append(kmeans.inertia_)
-    st.subheader("Elbow Method")
+        kmeans_tmp = KMeans(n_clusters=k, random_state=42, n_init=10)
+        kmeans_tmp.fit(X_scaled)
+        sse.append(kmeans_tmp.inertia_)
     fig_elbow, ax = plt.subplots()
-    ax.plot(range(1, 9), sse, marker='o', linestyle='--')
+    ax.plot(range(1,9), sse, marker='o', linestyle='--')
     ax.set_xlabel("Jumlah Cluster")
     ax.set_ylabel("SSE")
     ax.set_title("Elbow Method")
     st.pyplot(fig_elbow)
 
-    # KMeans clustering
-    kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
-    labels = kmeans.fit_predict(X_scaled)
-    data_grouped['Cluster'] = labels + 1
-    data_grouped['Cluster_str'] = data_grouped['Cluster'].astype(str)
-
-    silhouette_avg = silhouette_score(X_scaled, labels)
-    dbi = davies_bouldin_score(X_scaled, labels)
-
     st.subheader("Hasil Clustering")
     cluster_counts = data_grouped['Cluster'].value_counts().sort_index()
-    st.write("Distribusi Cluster")
     st.write(cluster_counts)
 
     fig_pie, ax = plt.subplots()
@@ -150,10 +148,8 @@ if page == "Analisis Curah Hujan":
     ax.legend()
     st.pyplot(fig_line)
 
-    # Gabungkan data_exploded
-    item_month = data[['Item', 'Invoice Date']].drop_duplicates()
-    item_month['Month'] = pd.to_datetime(item_month['Invoice Date']).dt.month
-
+    # data_exploded
+    item_month = data_selected[['Item', 'Month']].drop_duplicates()
     data_exploded = data_grouped.merge(item_month, on='Item', how='left')
     data_exploded = data_exploded.merge(monthly_sum[['Month', 'RR']], on='Month', how='left')
 
