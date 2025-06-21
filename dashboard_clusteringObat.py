@@ -52,11 +52,12 @@ data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
 
+# --- KMeans ---
 kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
 labels = kmeans.fit_predict(X_scaled)
 data_grouped['Cluster'] = labels + 1
 
-# Gabungkan cluster ke data
+# --- DATA EXPLODED ---
 data_final = pd.merge(
     data,
     data_grouped[['Item', 'Cluster']],
@@ -69,13 +70,12 @@ data_grouped_clustered = data_final.groupby(
     as_index=False
 )[['Qty', 'Item Amount']].sum()
 
-# Buat data_exploded
 data_exploded = data_grouped_clustered.copy()
 data_exploded['Use'] = data_exploded['Use'].str.split(',')
 data_exploded = data_exploded.explode('Use')
 data_exploded['Use'] = data_exploded['Use'].str.strip()
 
-# Manipulasi PERGOVERIS
+# PERGOVERIS rules
 data_exploded = data_exploded[
     ~((data_exploded['Item'] == 'PERGOVERIS 150 IU/75 IU') & (data_exploded['Cluster'] == 2))
 ]
@@ -84,22 +84,40 @@ data_exploded.loc[
     'Cluster'
 ] = 2
 
-# Gabungkan curah hujan bulanan
+# Merge curah hujan
 monthly_sum = data_hujan.groupby(data_hujan['TANGGAL'].dt.month)['RR'].sum().reset_index()
 monthly_sum.columns = ['Month', 'RR_BULAN']
 data_exploded = data_exploded.merge(monthly_sum, on='Month', how='left')
 
-# --- SIDEBAR PAGE ---
+# --- SIDEBAR ---
 page = st.sidebar.radio("Pilih Halaman", ["Clustering Obat", "Analisis Curah Hujan"])
 
-# ===================== CLUSTERING OBAT =====================
+# ==================== CLUSTERING OBAT ====================
 if page == "Clustering Obat":
     st.title("Clustering Obat")
-    st.write("Distribusi Cluster")
+
+    st.subheader("Preview Data Mentah")
+    st.dataframe(data.head())
+
+    st.subheader("Distribusi Cluster")
     cluster_counts = data_grouped['Cluster'].value_counts().sort_index()
     st.bar_chart(cluster_counts)
+    st.dataframe(cluster_counts.reset_index().rename(columns={'index': 'Cluster', 'Cluster': 'Jumlah'}))
 
-    st.write("Top 10 Fungsi Obat per Cluster")
+    st.subheader("Elbow Method (SSE)")
+    sse = []
+    for k in range(1, 9):
+        km = KMeans(n_clusters=k, random_state=42, n_init=10)
+        km.fit(X_scaled)
+        sse.append(km.inertia_)
+    fig, ax = plt.subplots()
+    ax.plot(range(1,9), sse, marker='o', linestyle='--')
+    ax.set_xlabel('Jumlah Cluster')
+    ax.set_ylabel('SSE')
+    ax.set_title('Elbow Method')
+    st.pyplot(fig)
+
+    st.subheader("Top 10 Fungsi Obat per Cluster")
     for cl in sorted(data_exploded['Cluster'].unique()):
         use_qty = data_exploded[data_exploded['Cluster'] == cl].groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
         fig, ax = plt.subplots(figsize=(10,5))
@@ -108,9 +126,10 @@ if page == "Clustering Obat":
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig)
 
-# ===================== ANALISIS CURAH HUJAN =====================
+# ==================== ANALISIS CURAH HUJAN ====================
 if page == "Analisis Curah Hujan":
     st.title("Analisis Curah Hujan")
+
     cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
     kategori = st.selectbox("Pilih Kategori Curah Hujan", ['RENDAH', 'MENENGAH', 'TINGGI', 'SANGAT TINGGI'])
 
@@ -133,7 +152,6 @@ if page == "Analisis Curah Hujan":
 
         st.dataframe(use_qty)
 
-        # Top 3 Item+Supplier per Use
         top3_list = []
         for use in use_qty['Use']:
             top3 = df_filtered[df_filtered['Use'] == use].groupby(['Item', 'Supplier'])['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(3)
