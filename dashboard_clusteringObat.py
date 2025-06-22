@@ -92,6 +92,8 @@ data_exploded = data_exploded.merge(monthly_sum, on='Month', how='left')
 
 # --- SIDEBAR ---
 page = st.sidebar.radio("Pilih Halaman", ["Hasil Klasterisasi", "Analisis Curah Hujan"])
+st.sidebar.markdown("---")
+st.sidebar.markdown("Marsa Nabila | 2110512048")
 
 # ==================== CLUSTERING OBAT ====================
 if page == "Hasil Klasterisasi":
@@ -113,6 +115,10 @@ if page == "Hasil Klasterisasi":
     ax.set_title("Elbow Method")
     st.pyplot(fig_elbow)
 
+    st.markdown("""
+        Gambar grafik dari hasil metode elbow, dapat dilihat bahwa titik siku terjadi pada k = 3.
+        """)
+    
     st.subheader("Hasil Clustering")
     # Hitung jumlah data per cluster
     cluster_counts = data_grouped['Cluster'].value_counts().sort_index()
@@ -172,9 +178,9 @@ if page == "Hasil Klasterisasi":
 # Rekomendasi
     st.subheader("Rekomendasi")
     st.markdown("""
-       Cluster 1 (Fast Moving Items) : kelompok obat dengan permintaan tinggi, frekuensi penggunaan rutin, dan permintaan yang konsisten sepanjang tahun. Obat dalam kelompok ini umumnya digunakan untuk pengobatan penyakit kronis atau pemeliharaan kesehatan jangka panjang, seperti vitamin, obat hipertensi, dan diabetes. Cluster ini perlu menjadi prioritas utama dalam perencanaan pengadaan dan pengelolaan stok agar selalu tersedia dan menghindari kekosongan. Selain itu, rumah sakit dapat memprioritaskan alokasi anggaran untuk obat-obatan dalam cluster ini karena permintaannya tinggi dan rutin, lakukan pembelian dalam jumlah besar dan terjadwal secara berkala untuk memastikan ketersediaan stok yang stabil sepanjang tahun untuk menghindari kekosongan stok (stockout). Disarankan menggunakan kontrak jangka panjang dengan supplier untuk menjamin kontinuitas pasokan dan memperoleh harga yang kompetitif.
+       Cluster 1 (Seasonal or Irregular Moving Items) : kelompok obat dengan pola penggunaan yang fluktuatif dan tidak konsisten. Obat-obatan dalam cluster ini cenderung dibutuhkan dalam waktu atau kondisi tertentu, seperti saat musim penyakit infeksi meningkat atau ketika terjadi lonjakan kasus. Pengadaan untuk cluster ini perlu disesuaikan dengan tren musiman dan pemantauan kondisi aktual di lapangan.
        
-       Cluster 2 (Seasonal or Irregular Moving Items) : kelompok obat dengan pola penggunaan yang fluktuatif dan tidak konsisten. Obat-obatan dalam cluster ini cenderung dibutuhkan dalam waktu atau kondisi tertentu, seperti saat musim penyakit infeksi meningkat atau ketika terjadi lonjakan kasus. Pengadaan untuk cluster ini perlu disesuaikan dengan tren musiman dan pemantauan kondisi aktual di lapangan.
+       Cluster 2 (Fast Moving Items) : kelompok obat dengan permintaan tinggi, frekuensi penggunaan rutin, dan permintaan yang konsisten sepanjang tahun. Obat dalam kelompok ini umumnya digunakan untuk pengobatan penyakit kronis atau pemeliharaan kesehatan jangka panjang, seperti vitamin, obat hipertensi, dan diabetes. Cluster ini perlu menjadi prioritas utama dalam perencanaan pengadaan dan pengelolaan stok agar selalu tersedia dan menghindari kekosongan. Selain itu, rumah sakit dapat memprioritaskan alokasi anggaran untuk obat-obatan dalam cluster ini karena permintaannya tinggi dan rutin, lakukan pembelian dalam jumlah besar dan terjadwal secara berkala untuk memastikan ketersediaan stok yang stabil sepanjang tahun untuk menghindari kekosongan stok (stockout). Disarankan menggunakan kontrak jangka panjang dengan supplier untuk menjamin kontinuitas pasokan dan memperoleh harga yang kompetitif.
        
        Cluster 3 (Slow Moving Items) : kelompok obat dengan permintaan jarang digunakan namun memiliki pola permintaan yang stabil. Biasanya digunakan untuk kondisi medis yang lebih spesifik. Item dalam cluster ini hanya dibeli sesuai permintaan, lakukan evaluasi berkala untuk menghindari penyimpanan berlebihan dan tetap sediakan stok minimum untuk kebutuhan khusus.
         """)
