@@ -143,7 +143,7 @@ if page == "Hasil Klasterisasi":
         cluster_df = data_grouped[data_grouped['Cluster'] == i].copy()
         cluster_df = cluster_df[['Item', 'Qty', 'Item Amount', 'Supplier', 'Use', 'CV', 'Jumlah Bulan Muncul', 'Cluster']]
         st.markdown(f"### Data untuk Cluster {i}")
-        st.dataframe(cluster_df.head())  # hanya menampilkan 5 baris pertama
+        st.dataframe(cluster_df)
     
     mean_data = data_grouped.groupby('Cluster').agg({
         'Qty': 'mean',
