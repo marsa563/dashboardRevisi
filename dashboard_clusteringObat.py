@@ -151,6 +151,22 @@ if page == "Clustering Obat":
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig)
 
+# Rekomendasi
+    st.subheader("Rekomendasi")
+    st.markdown("""
+       Cluster 1 (Fast Moving Items) : kelompok obat dengan permintaan tinggi, frekuensi penggunaan rutin, dan permintaan yang konsisten sepanjang tahun. Obat dalam kelompok ini umumnya digunakan untuk pengobatan penyakit kronis atau pemeliharaan kesehatan jangka panjang, seperti vitamin, obat hipertensi, dan diabetes. Cluster ini perlu menjadi prioritas utama dalam perencanaan pengadaan dan pengelolaan stok agar selalu tersedia dan menghindari kekosongan. Selain itu, rumah sakit dapat memprioritaskan alokasi anggaran untuk obat-obatan dalam cluster ini karena permintaannya tinggi dan rutin, lakukan pembelian dalam jumlah besar dan terjadwal secara berkala untuk memastikan ketersediaan stok yang stabil sepanjang tahun untuk menghindari kekosongan stok (stockout). Disarankan menggunakan kontrak jangka panjang dengan supplier untuk menjamin kontinuitas pasokan dan memperoleh harga yang kompetitif.
+       
+       Cluster 2 (Seasonal or Irregular Moving Items) : kelompok obat dengan pola penggunaan yang fluktuatif dan tidak konsisten. Obat-obatan dalam cluster ini cenderung dibutuhkan dalam waktu atau kondisi tertentu, seperti saat musim penyakit infeksi meningkat atau ketika terjadi lonjakan kasus. Pengadaan untuk cluster ini perlu disesuaikan dengan tren musiman dan pemantauan kondisi aktual di lapangan.
+       
+       Cluster 3 (Slow Moving Items) : kelompok obat dengan permintaan jarang digunakan namun memiliki pola permintaan yang stabil. Biasanya digunakan untuk kondisi medis yang lebih spesifik. Item dalam cluster ini hanya dibeli sesuai permintaan, lakukan evaluasi berkala untuk menghindari penyimpanan berlebihan dan tetap sediakan stok minimum untuk kebutuhan khusus.
+        """)
+
+# Saran
+    st.subheader("Saran")
+    st.markdown("""
+        Hasil analisis dan visualisasi ini berdasarkan dataset transaksi bulan Januari-Desember 2024.
+        """)
+
 # ==================== ANALISIS CURAH HUJAN ====================
 if page == "Analisis Curah Hujan":
     st.title("Analisis Curah Hujan")
