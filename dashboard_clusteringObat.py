@@ -33,25 +33,25 @@ data['Month'] = pd.to_datetime(data['Invoice Date']).dt.month
 
 qty_bulanan = data.groupby(['Item', 'Month'])['Qty'].sum().reset_index()
 stabilitas = qty_bulanan.groupby('Item')['Qty'].agg(['mean', 'std']).reset_index()
-stabilitas['CV (%)'] = (stabilitas['std'] / stabilitas['mean']) * 100
-stabilitas = stabilitas[['Item', 'CV (%)']]
+stabilitas['CV'] = (stabilitas['std'] / stabilitas['mean']) * 100
+stabilitas = stabilitas[['Item', 'CV']]
 bulan_aktif = qty_bulanan.groupby('Item')['Month'].nunique().reset_index()
 bulan_aktif.rename(columns={'Month': 'Jumlah Bulan Muncul'}, inplace=True)
 stabilitas = stabilitas.merge(bulan_aktif, on='Item', how='left')
 data = data.merge(stabilitas, on='Item', how='left')
-data['CV (%)'] = data['CV (%)'].fillna(80)
+data['CV'] = data['CV'].fillna(80)
 
 data_grouped = data.groupby(
-    ['Item', 'Supplier', 'Use', 'CV (%)', 'Jumlah Bulan Muncul'],
+    ['Item', 'Supplier', 'Use', 'CV', 'Jumlah Bulan Muncul'],
     as_index=False
 )[['Qty', 'Item Amount']].sum()
 
 data_grouped['Qty_log'] = np.log1p(data_grouped['Qty'])
 data_grouped['Item Amount_log'] = np.log1p(data_grouped['Item Amount'])
-data_grouped['CV (%)_log'] = np.log1p(data_grouped['CV (%)'])
+data_grouped['CV_log'] = np.log1p(data_grouped['CV'])
 
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV (%)_log', 'Jumlah Bulan Muncul']])
+X_scaled = scaler.fit_transform(data_grouped[['Qty_log', 'Item Amount_log', 'CV_log', 'Jumlah Bulan Muncul']])
 
 # --- KMeans ---
 kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
@@ -67,7 +67,7 @@ data_final = pd.merge(
 )
 
 data_grouped_clustered = data_final.groupby(
-    ['Item', 'Supplier', 'Use', 'Month', 'CV (%)', 'Cluster'],
+    ['Item', 'Supplier', 'Use', 'Month', 'CV', 'Cluster'],
     as_index=False
 )[['Qty', 'Item Amount']].sum()
 
@@ -91,11 +91,11 @@ monthly_sum.columns = ['Month', 'RR_BULAN']
 data_exploded = data_exploded.merge(monthly_sum, on='Month', how='left')
 
 # --- SIDEBAR ---
-page = st.sidebar.radio("Pilih Halaman", ["Clustering Obat", "Analisis Curah Hujan"])
+page = st.sidebar.radio("Pilih Halaman", ["Hasil Klasterisasi", "Analisis Curah Hujan"])
 
 # ==================== CLUSTERING OBAT ====================
-if page == "Clustering Obat":
-    st.title("Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri")
+if page == "Hasil Klasterisasi":
+    st.title("Dashboard Analisis Segmentasi Penjualan Obat Di RSU YPK Mandiri Menggunakan Metode K-Means")
 
     st.subheader("Preview Data")
     st.dataframe(data.head())
@@ -114,8 +114,20 @@ if page == "Clustering Obat":
     st.pyplot(fig_elbow)
 
     st.subheader("Hasil Clustering")
+    # Hitung jumlah data per cluster
     cluster_counts = data_grouped['Cluster'].value_counts().sort_index()
-    st.write(cluster_counts)
+    # Ubah ke DataFrame
+    cluster_df = cluster_counts.reset_index()
+    cluster_df.columns = ['Cluster', 'Jumlah Item']
+    
+    # Tambahkan kolom karakteristik
+    karakteristik_dict = {
+        1: 'Seasonal or Irregular Moving Items',
+        2: 'Fast Moving Items',
+        3: 'Slow Moving Items'
+    }
+    cluster_df['Karakteristik'] = cluster_df['Cluster'].map(karakteristik_dict)
+    st.write(cluster_df)
 
     fig_pie, ax = plt.subplots()
     ax.pie(cluster_counts, 
@@ -125,17 +137,25 @@ if page == "Clustering Obat":
     ax.set_title("Distribusi Cluster")
     st.pyplot(fig_pie)
 
+    st.subheader("Data per Cluster")
+    # Menampilkan data dari setiap cluster
+    for i in range(1, 4):
+        cluster_df = data_grouped[data_grouped['Cluster'] == i].copy()
+        cluster_df = cluster_df[['Item', 'Qty', 'Item Amount', 'Supplier', 'Use', 'CV', 'Jumlah Bulan Muncul', 'Cluster']]
+        st.markdown(f"### Data untuk Cluster {i}")
+        st.dataframe(cluster_df.head())  # hanya menampilkan 5 baris pertama
+    
     mean_data = data_grouped.groupby('Cluster').agg({
         'Qty': 'mean',
         'Item Amount': 'mean',
-        'CV (%)': 'mean',
+        'CV': 'mean',
         'Jumlah Bulan Muncul': 'mean'
     }).reset_index()
     st.write("Rata-rata Fitur per Cluster")
     st.dataframe(mean_data)
 
     st.subheader("Bar Chart Perbandingan Fitur per Cluster")
-    for col in ['Qty', 'Item Amount', 'CV (%)', 'Jumlah Bulan Muncul']:
+    for col in ['Qty', 'Item Amount', 'CV', 'Jumlah Bulan Muncul']:
         fig_bar, ax = plt.subplots()
         sns.barplot(data=mean_data, x='Cluster', y=col,
                     palette=[cluster_palette[int(i)] for i in mean_data['Cluster']], ax=ax)
