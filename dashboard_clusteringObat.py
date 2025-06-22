@@ -151,8 +151,6 @@ if page == "Hasil Klasterisasi":
         'CV': 'mean',
         'Jumlah Bulan Muncul': 'mean'
     }).reset_index()
-    st.write("Rata-rata Fitur per Cluster")
-    st.dataframe(mean_data)
 
     st.subheader("Bar Chart Perbandingan Fitur per Cluster")
     for col in ['Qty', 'Item Amount', 'CV', 'Jumlah Bulan Muncul']:
