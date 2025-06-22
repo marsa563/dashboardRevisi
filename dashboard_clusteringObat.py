@@ -247,7 +247,7 @@ if page == "Analisis Curah Hujan":
             top3['Use'] = use
             top3_list.append(top3)
         top3_df = pd.concat(top3_list)
-        st.write("Rekomendasi Supplier")
+        st.write("Rekomendasi Item dan Supplier")
         st.dataframe(top3_df)
     else:
         st.info("Tidak ada data untuk kombinasi ini.")
