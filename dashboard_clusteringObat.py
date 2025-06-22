@@ -213,6 +213,10 @@ if page == "Analisis Curah Hujan":
     ax.legend()
     st.pyplot(fig_line)
 
+    st.markdown("""
+        Sumber: https://dataonline.bmkg.go.id.
+        """)
+    
     st.title("Analisis Curah Hujan per Cluster")
     
     cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
