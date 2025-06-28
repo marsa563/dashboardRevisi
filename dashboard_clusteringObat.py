@@ -185,12 +185,6 @@ if page == "Hasil Klasterisasi":
        Cluster 3 (Slow Moving Items) : kelompok obat dengan permintaan jarang digunakan namun memiliki pola permintaan yang stabil. Biasanya digunakan untuk kondisi medis yang lebih spesifik. Item dalam cluster ini hanya dibeli sesuai permintaan, lakukan evaluasi berkala untuk menghindari penyimpanan berlebihan dan tetap sediakan stok minimum untuk kebutuhan khusus.
         """)
 
-# Saran
-    st.subheader("Saran")
-    st.markdown("""
-        Hasil analisis dan visualisasi ini berdasarkan dataset transaksi bulan Januari-Desember 2024.
-        """)
-
 # ==================== ANALISIS CURAH HUJAN ====================
 if page == "Analisis Curah Hujan":
     st.title("Analisis Curah Hujan")
