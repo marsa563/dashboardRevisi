@@ -147,9 +147,9 @@ if page == "Hasil Klasterisasi":
     
     # Tambahkan legend kustom
     cluster_labels = {
-        0: "Seasonal or irregular moving items",
-        1: "Fast moving items",
-        2: "Slow moving items"
+        1: "Seasonal or irregular moving items",
+        2: "Fast moving items",
+        3: "Slow moving items"
     }
     
     # Buat legend dengan warna dan label sesuai
