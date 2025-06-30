@@ -136,11 +136,27 @@ if page == "Hasil Klasterisasi":
     st.write(cluster_df)
 
     fig_pie, ax = plt.subplots()
-    ax.pie(cluster_counts, 
-           labels=[f"Cluster {i}" for i in cluster_counts.index],
-           autopct='%1.1f%%',
-           colors=[cluster_palette[int(i)] for i in cluster_counts.index])
+    # Pie chart
+    wedges, texts, autotexts = ax.pie(
+        cluster_counts,
+        labels=[f"Cluster {i}" for i in cluster_counts.index],
+        autopct='%1.1f%%',
+        colors=[cluster_palette[int(i)] for i in cluster_counts.index]
+    )
     ax.set_title("Distribusi Cluster")
+    
+    # Tambahkan legend kustom
+    cluster_labels = {
+        0: "Seasonal or irregular moving items",
+        1: "Fast moving items",
+        2: "Slow moving items"
+    }
+    
+    # Buat legend dengan warna dan label sesuai
+    legend_labels = [f"Cluster {i}: {cluster_labels[i]}" for i in cluster_counts.index]
+    ax.legend(wedges, legend_labels, title="Keterangan Cluster", loc="center left", bbox_to_anchor=(1, 0.5))
+    
+    # Tampilkan di Streamlit
     st.pyplot(fig_pie)
 
     st.markdown("""
