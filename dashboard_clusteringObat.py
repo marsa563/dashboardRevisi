@@ -136,6 +136,7 @@ if page == "Hasil Klasterisasi":
     st.write(cluster_df)
 
     fig_pie, ax = plt.subplots()
+    
     # Pie chart
     wedges, texts, autotexts = ax.pie(
         cluster_counts,
@@ -152,12 +153,13 @@ if page == "Hasil Klasterisasi":
         3: "Slow moving items"
     }
     
-    # Buat legend dengan warna dan label sesuai
+    # Buat legend di pojok kanan atas
     legend_labels = [f"Cluster {i}: {cluster_labels[i]}" for i in cluster_counts.index]
-    ax.legend(wedges, legend_labels, title="Keterangan Cluster", loc="center left", bbox_to_anchor=(1, 0.5))
+    ax.legend(wedges, legend_labels, title="Cluster", loc='upper right', bbox_to_anchor=(1.25, 1))
     
     # Tampilkan di Streamlit
     st.pyplot(fig_pie)
+
 
     st.markdown("""
         Gambar di atas menunjukkan hasil segmentasi item penjualan menggunakan metode K-Means Clustering yang dibagi menjadi tiga kelompok berdasarkan karakteristik pergerakan item, yaitu Fast Moving Items, Seasonal or Irregular Moving Items, dan Slow Moving Items.
