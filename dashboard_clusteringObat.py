@@ -135,7 +135,8 @@ if page == "Hasil Klasterisasi":
     cluster_df['Karakteristik'] = cluster_df['Cluster'].map(karakteristik_dict)
     st.write(cluster_df)
 
-    fig_pie, ax = plt.subplots()
+    # Ukuran figure diperlebar untuk beri ruang legend
+    fig_pie, ax = plt.subplots(figsize=(8, 6))
     
     # Pie chart
     wedges, texts, autotexts = ax.pie(
@@ -153,12 +154,19 @@ if page == "Hasil Klasterisasi":
         3: "Slow moving items"
     }
     
-    # Buat legend di pojok kanan atas
+    # Buat legend di pojok kanan atas, tidak menimpa chart
     legend_labels = [f"Cluster {i}: {cluster_labels[i]}" for i in cluster_counts.index]
-    ax.legend(wedges, legend_labels, title="Cluster", loc='upper right', bbox_to_anchor=(1.25, 1))
+    ax.legend(
+        wedges,
+        legend_labels,
+        title="Cluster",
+        loc='upper right',
+        bbox_to_anchor=(1.4, 1)  # posisi lebih ke kanan
+    )
     
     # Tampilkan di Streamlit
     st.pyplot(fig_pie)
+
 
 
     st.markdown("""
