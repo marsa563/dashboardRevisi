@@ -143,7 +143,20 @@ if page == "Hasil Klasterisasi":
     ax.set_title("Distribusi Cluster")
     st.pyplot(fig_pie)
 
+    st.markdown("""
+        Gambar di atas menunjukkan hasil segmentasi item penjualan menggunakan metode K-Means Clustering yang dibagi menjadi tiga kelompok berdasarkan karakteristik pergerakan item, yaitu Fast Moving Items, Seasonal or Irregular Moving Items, dan Slow Moving Items.
+
+        Cluster 2 merupakan kelompok dengan jumlah item terbanyak, yaitu sebanyak 740 item atau sekitar 57,5% dari total item. Kelompok ini dikategorikan sebagai Fast Moving Items, yaitu item yang memiliki tingkat penjualan tinggi dan penjualan cukup stabil.
+
+        Cluster 1 terdiri dari 498 item atau sekitar 38,7%. Kelompok ini diklasifikasikan sebagai Seasonal or Irregular Moving Items, yaitu item dengan pola penjualan yang fluktuatif atau musiman.
+        
+        Cluster 3 hanya mencakup 50 item atau sekitar 3,9%. Kelompok ini merupakan Slow Moving Items, yaitu item yang jarang terjual. Item dalam kelompok ini perlu dievaluasi secara berkala untuk menghindari penumpukan stok atau pemborosan anggaran.
+        """)
+
     st.subheader("Data per Cluster")
+    st.markdown("""
+        Berikut merupakan daftar item per cluster:
+        """)
     # Menampilkan data dari setiap cluster
     for i in range(1, 4):
         cluster_df = data_grouped[data_grouped['Cluster'] == i].copy()
@@ -165,24 +178,68 @@ if page == "Hasil Klasterisasi":
                     palette=[cluster_palette[int(i)] for i in mean_data['Cluster']], ax=ax)
         ax.set_title(f"Rata-rata {col} per Cluster")
         st.pyplot(fig_bar)
+    
+        # Tambahkan keterangan setelah grafik
+        if col == 'Qty':
+            st.markdown("Grafik diatas merupakan hasil visualisasi rata-rata jumlah penjualan (Qty) pada masing-masing cluster yang terbentuk dari hasil K-Means. Cluster 1 menunjukkan rata-rata paling rendah dengan nilai 34,33, yang menunjukkan bahwa kelompok ini berisi item dengan tingkat penjualan yang sangat rendah dibandingkan cluster lain. Sebaliknya, Cluster 2 menunjukkan rata-rata tertinggi dengan nilai 1374,61, yang menunjukkan bahwa kelompok ini berisi item dengan tingkat penjualan yang sangat tinggi dibandingkan cluster lain. Sementara itu, Cluster 3 menunjukkan rata-rata menengah dengan nilai 66,72, yang menunjukkan bahwa kelompok ini berisi item dengan tingkat penjualan menengah.")
+        elif col == 'Item Amount':
+            st.markdown("Grafik diatas merupakan hasil visualisasi rata-rata nilai transaksi (Item Amount) pada masing-masing cluster yang terbentuk dari hasil K-Means. Cluster 1 menunjukkan rata-rata paling rendah dengan nilai 1.701.851, yang menunjukkan bahwa kelompok ini berisi item dengan nilai transaksi yang sangat rendah dibandingkan cluster lain. Sebaliknya, Cluster 2 menunjukkan rata-rata tertinggi dengan nilai 37.309.363, yang menunjukkan bahwa kelompok ini berisi item dengan nilai transaksi yang sangat tinggi dibandingkan cluster lain. Sementara itu, Cluster 3 menunjukkan rata-rata menengah dengan nilai 2.412.678, yang menunjukkan bahwa kelompok ini berisi item dengan nilai transaksi menengah.")
+        elif col == 'CV':
+            st.markdown("Grafik diatas merupakan hasil visualisasi rata-rata koefisien variasi (CV) pada masing-masing cluster yang terbentuk dari hasil K-Means. Nilai CV mencerminkan tingkat kestabilan penjualan obat, dimana semakin rendah nilai koefisien variasi, semakin stabil pola pemakaiannya dari waktu ke waktu (Chaniago, 2022).  Cluster 1 menunjukkan rata-rata tertinggi dengan nilai 75,83, yang menunjukkan bahwa kelompok ini berisi item dengan penjualan fluktuatif. Cluster 2 menunjukkan rata-rata menengah dengan nilai 51,30, yang menunjukkan bahwa kelompok ini berisi item dengan penjualan cukup stabil. Sementara itu, Cluster 3 menunjukkan rata-rata paling rendah dengan nilai 0,16, yang menunjukkan bahwa kelompok ini berisi item dengan penjualan sangat stabil.")
+        elif col == 'Jumlah Bulan Muncul':
+            st.markdown("Gambar 4.16 merupakan hasil visualisasi rata-rata jumlah bulan muncul pada masing-masing cluster yang terbentuk dari hasil K-Means. Cluster 1 menunjukkan rata-rata paling menengah dengan nilai 3,18, yang menunjukkan bahwa kelompok ini berisi item dengan penjualan kurang konsisten dan cenderung bersifat musiman. Cluster 2 menunjukkan rata-rata tertinggi dengan nilai 10,76, yang menunjukkan bahwa kelompok ini berisi item dengan penjualan konsisten sepanjang tahun dibandingkan cluster lain. Sementara itu, Cluster 3 menunjukkan rata-rata paling rendah dengan nilai 2,74, yang menunjukkan bahwa kelompok ini berisi item yang jarang terjual atau kebutuhan khusus.")
+
 
     st.subheader("Top 10 Fungsi Obat per Cluster")
+    
     for cl in sorted(data_exploded['Cluster'].unique()):
-        use_qty = data_exploded[data_exploded['Cluster'] == cl].groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
-        fig, ax = plt.subplots(figsize=(10,5))
+        use_qty = data_exploded[data_exploded['Cluster'] == cl] \
+            .groupby('Use')['Qty'].sum() \
+            .reset_index() \
+            .sort_values('Qty', ascending=False).head(10)
+        
+        fig, ax = plt.subplots(figsize=(10, 5))
         sns.barplot(data=use_qty, x='Use', y='Qty', color=cluster_palette[cl], ax=ax)
         ax.set_title(f"Top 10 Fungsi Obat Cluster {cl}")
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig)
+        
+        # Tambahkan narasi atau penjelasan untuk tiap cluster
+        if cl == 1:
+            st.markdown(
+                "Cluster 1 : Seasonal or Irregular Moving Items"
+                "Berdasarkan asil visualisasi top 10 Fungsi Obat (Use) pada Cluster 1, dapat dilihat bahwa hipertensi dan diabetes mellitus tipe 2 tetap menjadi dua fungsi utama dalam Cluster 1, namun dengan jumlah permintaan yang jauh lebih rendah dibandingkan Cluster 2, karena kemungkinan adanya perbedaan dalam merek, dosis, atau bentuk sediaan yang digunakan. Selanjutnya, terdapat fungsi obat untuk penyakit musiman dan infeksi umum seperti batuk, infeksi bakteri, serta antibiotik yang muncul. Ini menunjukkan bahwa Cluster 1 banyak mencakup obat-obat yang digunakan ketika terjadi lonjakan kasus, misalnya saat musim hujan (flu, batuk, ISPA), atau saat terjadi penyebaran infeksi. Fungsi-fungsi lain yang muncul seperti kolesterol, stimulasi ovarium, infeksi saluran kemih, dan zat besi menunjukkan adanya keberagaman kondisi medis yang tidak selalu rutin terjadi. Hal ini sangat selaras dengan karakteristik Cluster 1, dengan jumlah pembelian yang lebih rendah, serta frekuensi kemunculan yang sedikit, dan permintaan yang fluktuatif, sehingga perlu dikelola secara dinamis dan menyesuaikan dengan tren penyakit musiman atau permintaan temporer."
+            )
+        elif cl == 2:
+            st.markdown(
+                "Cluster 2 : Fast Moving Items"
+                "Berdasarkan hasil visualisasi top 10 Fungsi Obat (Use) pada Cluster 2, dapat dilihat bahwa Vitamin D menempati posisi teratas dalam Cluster 2 yang menandakan bahwa suplemen ini memiliki tingkat konsumsi tinggi dan berkelanjutan, kemungkinan besar digunakan dalam program pemeliharaan kesehatan umum, terutama untuk pasien dengan risiko defisiensi vitamin, seperti lansia, ibu hamil, atau pasien dengan penyakit kronis. Fungsi lain yang menempati urutan atas dalam grafik ini adalah obat hipertensi, terapi hormon, infeksi bakteri, dan diabetes melitus tipe 2. Fungsi-fungsi tersebut berkaitan erat dengan penyakit kronis atau kebutuhan terapi jangka panjang, yang menuntut penggunaan obat secara konsisten dan berulang. Hal ini sangat selaras dengan karakteristik Cluster 2, dengan jumlah pembelian yang sangat tinggi, serta frekuensi kemunculan yang merata hampir setiap bulan. Dengan demikian, item dalam Cluster 2 bisa diidentifikasi sebagai obat prioritas tinggi yang perlu dijaga ketersediaannya secara stabil dalam stok rumah sakit."
+            )
+        elif cl == 3:
+            st.markdown(
+                "Cluster 3 : Slow Moving Items"
+                "Berdasarkan hasil visualisasi top 10 Fungsi Obat (Use) pada Cluster 3, dapat dilihat bahwa Vitamin kehamilan mendominasi secara signifikan di Cluster 3, diikuti oleh item dengan fungsi yang lebih spesifik termasuk gangguan metabolisme protein, pembesaran prostat, hiperplasia, dan GERD/tukak lambung, dimana fungsi-fungsi obat ini merupakan kondisi medis khusus dan biasanya ditangani dengan terapi jangka panjang namun intensitas rendah. Meskipun jumlah kuantitas setiap fungsi di cluster ini relatif kecil, hal ini sejalan dengan karakteristik Cluster 3, yaitu kelompok item yang muncul hanya dalam beberapa bulan, namun memiliki pola permintaan yang sangat stabil. Fungsi-fungsi dalam cluster ini cenderung terkait penggunaan khusus. Strategi pengadaan yang digunakan bisa berupa stok minimum yang tetap tersedia, dengan penyesuaian berdasarkan siklus perawatan pasien tertentu."
+            )
 
+
+# Kesimpulan
+    st.subheader("Kesimpulan")
+    st.markdown("""
+       Cluster 1 (Seasonal or Irregular Moving Items) : kelompok obat dengan pola penggunaan yang fluktuatif dan tidak konsisten. Obat-obatan dalam cluster ini cenderung dibutuhkan dalam waktu atau kondisi tertentu, seperti saat musim penyakit infeksi meningkat atau ketika terjadi lonjakan kasus.
+       
+       Cluster 2 (Fast Moving Items) : kelompok obat dengan permintaan tinggi, frekuensi penggunaan rutin, dan permintaan yang konsisten sepanjang tahun. Obat dalam kelompok ini umumnya digunakan untuk pengobatan penyakit kronis atau pemeliharaan kesehatan jangka panjang, seperti vitamin, obat hipertensi, dan diabetes.
+       
+       Cluster 3 (Slow Moving Items) : kelompok obat dengan permintaan jarang digunakan namun memiliki pola permintaan yang stabil. Biasanya digunakan untuk kondisi medis yang lebih spesifik.
+        """)
+    
 # Rekomendasi
     st.subheader("Rekomendasi")
     st.markdown("""
-       Cluster 1 (Seasonal or Irregular Moving Items) : kelompok obat dengan pola penggunaan yang fluktuatif dan tidak konsisten. Obat-obatan dalam cluster ini cenderung dibutuhkan dalam waktu atau kondisi tertentu, seperti saat musim penyakit infeksi meningkat atau ketika terjadi lonjakan kasus. Pengadaan untuk cluster ini perlu disesuaikan dengan tren musiman dan pemantauan kondisi aktual di lapangan.
+       Cluster 1 (Seasonal or Irregular Moving Items) : Pengadaan untuk cluster ini perlu disesuaikan dengan tren musiman dan pemantauan kondisi aktual di lapangan.
        
-       Cluster 2 (Fast Moving Items) : kelompok obat dengan permintaan tinggi, frekuensi penggunaan rutin, dan permintaan yang konsisten sepanjang tahun. Obat dalam kelompok ini umumnya digunakan untuk pengobatan penyakit kronis atau pemeliharaan kesehatan jangka panjang, seperti vitamin, obat hipertensi, dan diabetes. Cluster ini perlu menjadi prioritas utama dalam perencanaan pengadaan dan pengelolaan stok agar selalu tersedia dan menghindari kekosongan. Selain itu, rumah sakit dapat memprioritaskan alokasi anggaran untuk obat-obatan dalam cluster ini karena permintaannya tinggi dan rutin, lakukan pembelian dalam jumlah besar dan terjadwal secara berkala untuk memastikan ketersediaan stok yang stabil sepanjang tahun untuk menghindari kekosongan stok (stockout). Disarankan menggunakan kontrak jangka panjang dengan supplier untuk menjamin kontinuitas pasokan dan memperoleh harga yang kompetitif.
+       Cluster 2 (Fast Moving Items) : Cluster ini perlu menjadi prioritas utama dalam perencanaan pengadaan dan pengelolaan stok agar selalu tersedia dan menghindari kekosongan. Selain itu, rumah sakit dapat memprioritaskan alokasi anggaran untuk obat-obatan dalam cluster ini karena permintaannya tinggi dan rutin, lakukan pembelian dalam jumlah besar dan terjadwal secara berkala untuk memastikan ketersediaan stok yang stabil sepanjang tahun untuk menghindari kekosongan stok (stockout). Disarankan menggunakan kontrak jangka panjang dengan supplier untuk menjamin kontinuitas pasokan dan memperoleh harga yang kompetitif.
        
-       Cluster 3 (Slow Moving Items) : kelompok obat dengan permintaan jarang digunakan namun memiliki pola permintaan yang stabil. Biasanya digunakan untuk kondisi medis yang lebih spesifik. Item dalam cluster ini hanya dibeli sesuai permintaan, lakukan evaluasi berkala untuk menghindari penyimpanan berlebihan dan tetap sediakan stok minimum untuk kebutuhan khusus.
+       Cluster 3 (Slow Moving Items) : Item dalam cluster ini hanya dibeli sesuai permintaan, lakukan evaluasi berkala untuk menghindari penyimpanan berlebihan dan tetap sediakan stok minimum untuk kebutuhan khusus.
         """)
 
 # ==================== ANALISIS CURAH HUJAN ====================
