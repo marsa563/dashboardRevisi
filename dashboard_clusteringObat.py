@@ -378,36 +378,36 @@ if page == "Optimalisasi":
     
     df = pd.data_grouped_clustered
     
-        # Tambahkan kolom Curah Hujan berdasarkan kolom 'Month'
-        def kategori_curah_hujan(bulan):
-            if bulan == 2:
-                return 'Sangat Tinggi'
-            elif bulan in [1, 3, 12]:
-                return 'Tinggi'
-            elif bulan in [4, 6, 7, 9, 11]:
-                return 'Menengah'
-            elif bulan in [5, 8, 10]:
-                return 'Rendah'
-            else:
-                return 'Tidak Diketahui'
+    # Tambahkan kolom Curah Hujan berdasarkan kolom 'Month'
+    def kategori_curah_hujan(bulan):
+        if bulan == 2:
+            return 'Sangat Tinggi'
+        elif bulan in [1, 3, 12]:
+            return 'Tinggi'
+        elif bulan in [4, 6, 7, 9, 11]:
+            return 'Menengah'
+        elif bulan in [5, 8, 10]:
+            return 'Rendah'
+        else:
+            return 'Tidak Diketahui'
     
-        df['Curah Hujan'] = df['Month'].apply(kategori_curah_hujan)
-        df['Month'] = df['Month'].map(bulan_map)
+    df['Curah Hujan'] = df['Month'].apply(kategori_curah_hujan)
+    df['Month'] = df['Month'].map(bulan_map)
     
-        # Filter kolom yang diperlukan
-        df_filtered = df[['Cluster', 'Curah Hujan', 'Month', 'Item', 'Supplier', 'Use', 'Qty']].copy()
+    # Filter kolom yang diperlukan
+    df_filtered = df[['Cluster', 'Curah Hujan', 'Month', 'Item', 'Supplier', 'Use', 'Qty']].copy()
     
-        # Tambahkan Rank
-        df_filtered['Rank'] = df_filtered.groupby(['Cluster', 'Curah Hujan', 'Month'])['Qty'].rank(method='first', ascending=False)
+    # Tambahkan Rank
+    df_filtered['Rank'] = df_filtered.groupby(['Cluster', 'Curah Hujan', 'Month'])['Qty'].rank(method='first', ascending=False)
     
-        # Filter hanya top 10
-        df_top10 = df_filtered[df_filtered['Rank'] <= 10].drop(columns='Rank')
+    # Filter hanya top 10
+    df_top10 = df_filtered[df_filtered['Rank'] <= 10].drop(columns='Rank')
     
-        # Urutkan data
-        df_top10 = df_top10.sort_values(by=['Cluster', 'Curah Hujan', 'Month', 'Qty'], ascending=[True, True, True, False])
+    # Urutkan data
+    df_top10 = df_top10.sort_values(by=['Cluster', 'Curah Hujan', 'Month', 'Qty'], ascending=[True, True, True, False])
     
-        # Tampilkan hasil
-        st.dataframe(df_top10, use_container_width=True)
+    # Tampilkan hasil
+    st.dataframe(df_top10, use_container_width=True)
     
     else:
         st.warning("Tidak ada data untuk kombinasi yang dipilih.")
