@@ -316,6 +316,9 @@ if page == "Analisis Curah Hujan":
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
         st.pyplot(fig)
 
+        st.markdown("""
+            Berikut merupakan jumlah permintaan obat berdasarkan grafik diatas:
+            """)
         st.dataframe(use_qty)
 
         top3_list = []
@@ -325,6 +328,9 @@ if page == "Analisis Curah Hujan":
             top3_list.append(top3)
         top3_df = pd.concat(top3_list)
         st.write("Rekomendasi Item dan Supplier")
+        st.markdown("""
+            Berikut merupakan rekomendasi top 3 obat dan supplier berdasarkan grafik diatas:
+            """)
         st.dataframe(top3_df)
     else:
         st.info("Tidak ada data untuk kombinasi ini.")
