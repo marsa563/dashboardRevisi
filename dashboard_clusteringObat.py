@@ -407,7 +407,7 @@ if page == "Optimalisasi":
     df_top10 = df_top10.sort_values(by=['Cluster', 'Curah Hujan', 'Month', 'Qty'], ascending=[True, True, True, False])
     
     # Tampilkan hasil
-    st.dataframe(df_top10, use_container_width=True)
+    st.dataframe(df_top10.style.hide(axis="index"), use_container_width=True)
     
 else:
     st.warning("Tidak ada data untuk kombinasi yang dipilih.")
