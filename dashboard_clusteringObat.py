@@ -409,5 +409,5 @@ if page == "Optimalisasi":
     # Tampilkan hasil
     st.dataframe(df_top10, use_container_width=True)
     
-    else:
-        st.warning("Tidak ada data untuk kombinasi yang dipilih.")
+else:
+    st.warning("Tidak ada data untuk kombinasi yang dipilih.")
