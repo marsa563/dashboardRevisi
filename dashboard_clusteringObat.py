@@ -296,69 +296,69 @@ if page == "Analisis Curah Hujan":
     
     st.title("Analisis Curah Hujan per Cluster")
 
-# Pilih Cluster
-cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
-
-# Pilih Bulan
-bulan_map = {
-    1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April',
-    5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus',
-    9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
-}
-bulan_pilihan = st.selectbox("Pilih Bulan", options=sorted(bulan_map.keys()), format_func=lambda x: bulan_map[x])
-
-# Pilih kategori curah hujan
-kategori = st.selectbox("Pilih Kategori Curah Hujan", ['RENDAH', 'MENENGAH', 'TINGGI', 'SANGAT TINGGI'])
-
-# Filter berdasarkan kategori curah hujan & bulan
-if kategori == 'RENDAH':
-    df_filtered = data_exploded[
-        (data_exploded['Cluster'] == cluster_pick) &
-        (data_exploded['RR_BULAN'] <= 100) &
-        (data_exploded['Month'] == bulan_pilihan)
-    ]
-elif kategori == 'MENENGAH':
-    df_filtered = data_exploded[
-        (data_exploded['Cluster'] == cluster_pick) &
-        (data_exploded['RR_BULAN'] > 100) & (data_exploded['RR_BULAN'] <= 300) &
-        (data_exploded['Month'] == bulan_pilihan)
-    ]
-elif kategori == 'TINGGI':
-    df_filtered = data_exploded[
-        (data_exploded['Cluster'] == cluster_pick) &
-        (data_exploded['RR_BULAN'] > 300) & (data_exploded['RR_BULAN'] <= 500) &
-        (data_exploded['Month'] == bulan_pilihan)
-    ]
-else:
-    df_filtered = data_exploded[
-        (data_exploded['Cluster'] == cluster_pick) &
-        (data_exploded['RR_BULAN'] > 500) &
-        (data_exploded['Month'] == bulan_pilihan)
-    ]
-
-# Tampilkan hasil
-if not df_filtered.empty:
-    use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
-    fig, ax = plt.subplots(figsize=(10,5))
-    sns.barplot(data=use_qty, x='Use', y='Qty', color=cluster_palette[cluster_pick], ax=ax)
-    ax.set_title(f"Top 10 Fungsi Obat Cluster {cluster_pick} - {kategori} - {bulan_map[bulan_pilihan]}")
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-    st.pyplot(fig)
-
-    st.markdown("### Tabel Jumlah Permintaan Obat")
-    st.dataframe(use_qty)
-
-    top3_list = []
-    for use in use_qty['Use']:
-        top3 = df_filtered[df_filtered['Use'] == use].groupby(['Item', 'Supplier'])['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(3)
-        top3['Use'] = use
-        top3_list.append(top3)
-    top3_df = pd.concat(top3_list)
+    # Pilih Cluster
+    cluster_pick = st.selectbox("Pilih Cluster", sorted(data_exploded['Cluster'].unique()))
     
-    st.subheader("Rekomendasi Item dan Supplier")
-    st.markdown("""
-        Berikut merupakan rekomendasi top 3 obat dan supplier berdasarkan grafik dan tabel di atas yang dapat dijadikan prioritas pengadaan stok:
-    """)
-    st.dataframe(top3_df)
-else:
-    st.warning("Tidak ada data untuk kombinasi yang dipilih.")
+    # Pilih Bulan
+    bulan_map = {
+        1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April',
+        5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus',
+        9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
+    }
+    bulan_pilihan = st.selectbox("Pilih Bulan", options=sorted(bulan_map.keys()), format_func=lambda x: bulan_map[x])
+    
+    # Pilih kategori curah hujan
+    kategori = st.selectbox("Pilih Kategori Curah Hujan", ['RENDAH', 'MENENGAH', 'TINGGI', 'SANGAT TINGGI'])
+    
+    # Filter berdasarkan kategori curah hujan & bulan
+    if kategori == 'RENDAH':
+        df_filtered = data_exploded[
+            (data_exploded['Cluster'] == cluster_pick) &
+            (data_exploded['RR_BULAN'] <= 100) &
+            (data_exploded['Month'] == bulan_pilihan)
+        ]
+    elif kategori == 'MENENGAH':
+        df_filtered = data_exploded[
+            (data_exploded['Cluster'] == cluster_pick) &
+            (data_exploded['RR_BULAN'] > 100) & (data_exploded['RR_BULAN'] <= 300) &
+            (data_exploded['Month'] == bulan_pilihan)
+        ]
+    elif kategori == 'TINGGI':
+        df_filtered = data_exploded[
+            (data_exploded['Cluster'] == cluster_pick) &
+            (data_exploded['RR_BULAN'] > 300) & (data_exploded['RR_BULAN'] <= 500) &
+            (data_exploded['Month'] == bulan_pilihan)
+        ]
+    else:
+        df_filtered = data_exploded[
+            (data_exploded['Cluster'] == cluster_pick) &
+            (data_exploded['RR_BULAN'] > 500) &
+            (data_exploded['Month'] == bulan_pilihan)
+        ]
+    
+    # Tampilkan hasil
+    if not df_filtered.empty:
+        use_qty = df_filtered.groupby('Use')['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(10)
+        fig, ax = plt.subplots(figsize=(10,5))
+        sns.barplot(data=use_qty, x='Use', y='Qty', color=cluster_palette[cluster_pick], ax=ax)
+        ax.set_title(f"Top 10 Fungsi Obat Cluster {cluster_pick} - {kategori} - {bulan_map[bulan_pilihan]}")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+        st.pyplot(fig)
+    
+        st.markdown("### Tabel Jumlah Permintaan Obat")
+        st.dataframe(use_qty)
+    
+        top3_list = []
+        for use in use_qty['Use']:
+            top3 = df_filtered[df_filtered['Use'] == use].groupby(['Item', 'Supplier'])['Qty'].sum().reset_index().sort_values('Qty', ascending=False).head(3)
+            top3['Use'] = use
+            top3_list.append(top3)
+        top3_df = pd.concat(top3_list)
+        
+        st.subheader("Rekomendasi Item dan Supplier")
+        st.markdown("""
+            Berikut merupakan rekomendasi top 3 obat dan supplier berdasarkan grafik dan tabel di atas yang dapat dijadikan prioritas pengadaan stok:
+        """)
+        st.dataframe(top3_df)
+    else:
+        st.warning("Tidak ada data untuk kombinasi yang dipilih.")
