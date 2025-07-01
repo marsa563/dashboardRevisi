@@ -410,7 +410,6 @@ if page == "Optimalisasi":
     st.dataframe(df_top10.reset_index(drop=True), use_container_width=True)
 
     # Judul dan deskripsi
-    st.title("Ringkasan Penjualan Obat per Cluster, Curah Hujan, dan Bulan")
     st.subheader("Rekapitulasi Total Penjualan (Qty) Obat Perbulan")
     st.write("Berikut ini merupakan jumlah total permintaan obat berdasarkan hasil cluster, dikategorikan menurut curah hujan dan bulan:")
     
@@ -424,6 +423,24 @@ if page == "Optimalisasi":
     
     # Tampilkan hasil
     st.dataframe(cluster_month_summary, use_container_width=True)
+
+    st.subheader("Ringkasan")
+
+    st.markdown("""
+        Cluster 1:
+        Pada Cluster 1, pada kondisi curah hujan menengah, penjualan tertinggi terjadi pada bulan Juli, diikuti oleh November dan Juni. Hal ini menunjukkan bahwa bulan Juni merupakan waktu yang ideal untuk melakukan pengadaan agar dapat mengantisipasi lonjakan permintaan di bulan berikutnya. Pada saat curah hujan rendah, puncak penjualan tercatat pada Mei dan Oktober, sehingga pengadaan sebaiknya dilakukan mulai dari April hingga awal Mei. Sementara itu, saat curah hujan tinggi, jumlah penjualan melonjak drastis di Januari, yang menandakan bahwa pengadaan harus diprioritaskan pada bulan Desember. Untuk kategori sangat tinggi, puncak permintaan terjadi di Februari, sehingga pengadaan optimal dilakukan pada Januari.
+
+        Cluster 2:
+        Pada Cluster 2, tren penjualan juga menunjukkan pola yang konsisten. Saat curah hujan menengah, penjualan tertinggi terjadi pada November, disusul oleh bulan April dan Juli. Maka, bulan Oktober menjadi waktu yang strategis untuk pengadaan. Saat curah hujan rendah, penjualan memuncak di Mei, sehingga pengadaan sebaiknya dilakukan pada bulan sebelumnya, yaitu April. Untuk kategori curah hujan tinggi, permintaan tertinggi terjadi pada Maret, yang mengindikasikan bahwa Februari adalah waktu yang tepat untuk mempersiapkan stok. Di sisi lain, saat curah hujan sangat tinggi, puncak penjualan kembali terjadi di Februari, yang memperkuat pentingnya pengadaan pada bulan Januari.
+
+        Cluster 3:
+        Pada Cluster 3, pola permintaan cenderung lebih rendah dibandingkan dua cluster sebelumnya, namun tren bulanan tetap dapat diamati. Saat curah hujan menengah, penjualan tertinggi terjadi pada November, menunjukkan bahwa pengadaan ideal dilakukan pada Oktober. Dalam kondisi curah hujan rendah, puncak permintaan tercatat di Oktober, sehingga stok perlu disiapkan mulai dari September. Untuk curah hujan kategori tinggi, penjualan tertinggi tercapai pada Desember, diikuti oleh Januari dan Maret. Ini menunjukkan bahwa pengadaan sebaiknya dilakukan mulai November. Sementara saat curah hujan sangat tinggi, kembali terjadi lonjakan permintaan di Februari, dan pengadaan idealnya dilakukan pada Januari.
+    """)
+
+    st.subheader("Kesimpulan")
+    st.markdown("""
+        Secara keseleuruhan, bulan Januari, Februari, Mei, dan November merupakan periode dengan permintaan tertinggi di berbagai cluster dan kategori curah hujan. Oleh karena itu, strategi pengadaan stok obat di rumah sakit sebaiknya mempertimbangkan karakteristik masing-masing cluster untuk menghindari kekurangan stok dan memastikan ketersediaan obat saat dibutuhkan.
+    """)
 
 else:
     st.warning("Tidak ada data untuk kombinasi yang dipilih.")
