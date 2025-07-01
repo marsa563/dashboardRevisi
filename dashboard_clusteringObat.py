@@ -408,6 +408,22 @@ if page == "Optimalisasi":
     
     # Tampilkan hasil
     st.dataframe(df_top10.reset_index(drop=True), use_container_width=True)
+
+    # Judul dan deskripsi
+    st.title("Ringkasan Penjualan Obat per Cluster, Curah Hujan, dan Bulan")
+    st.subheader("Rekapitulasi Total Penjualan (Qty) Obat Perbulan")
+    st.write("Berikut ini merupakan jumlah total permintaan obat berdasarkan hasil cluster, dikategorikan menurut curah hujan dan bulan:")
     
+    # Group data berdasarkan Cluster, Curah Hujan, dan Bulan
+    cluster_month_summary = (
+        df_top10.groupby(['Cluster', 'Curah Hujan', 'Month'])['Qty']
+        .sum()
+        .reset_index()
+        .sort_values(by=['Cluster', 'Curah Hujan', 'Qty'], ascending=[True, True, False])
+    )
+    
+    # Tampilkan hasil
+    st.dataframe(cluster_month_summary, use_container_width=True)
+
 else:
     st.warning("Tidak ada data untuk kombinasi yang dipilih.")
