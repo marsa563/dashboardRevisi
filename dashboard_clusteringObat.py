@@ -376,7 +376,7 @@ if page == "Optimalisasi":
         9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
     }
     
-        df = pd.data_grouped_clustered
+    df = pd.data_grouped_clustered
     
         # Tambahkan kolom Curah Hujan berdasarkan kolom 'Month'
         def kategori_curah_hujan(bulan):
