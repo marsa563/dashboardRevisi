@@ -442,5 +442,5 @@ if page == "Optimalisasi":
         Secara keseleuruhan, bulan Januari, Februari, Mei, dan November merupakan periode dengan permintaan tertinggi di berbagai cluster dan kategori curah hujan. Oleh karena itu, strategi pengadaan stok obat di rumah sakit sebaiknya mempertimbangkan karakteristik masing-masing cluster untuk menghindari kekurangan stok dan memastikan ketersediaan obat saat dibutuhkan.
     """)
 
-else:
+    else:
     st.warning("Tidak ada data untuk kombinasi yang dipilih.")
