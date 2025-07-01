@@ -327,9 +327,9 @@ if page == "Analisis Curah Hujan":
             top3['Use'] = use
             top3_list.append(top3)
         top3_df = pd.concat(top3_list)
-        st.write("Rekomendasi Item dan Supplier")
+        st.subheader("Rekomendasi Item dan Supplier")
         st.markdown("""
-            Berikut merupakan rekomendasi top 3 obat dan supplier berdasarkan grafik diatas:
+            Berikut merupakan rekomendasi top 3 obat dan supplier berdasarkan grafik dan tabel diatas yang dapat dijadikan prioritas pengadaan stok:
             """)
         st.dataframe(top3_df)
     else:
