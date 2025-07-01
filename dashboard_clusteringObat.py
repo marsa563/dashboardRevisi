@@ -443,4 +443,4 @@ if page == "Optimalisasi":
     """)
 
 else:
-        st.warning("Tidak ada data untuk kombinasi yang dipilih.")
+    st.warning("Tidak ada data untuk kombinasi yang dipilih.")
