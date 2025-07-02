@@ -167,8 +167,6 @@ if page == "Hasil Klasterisasi":
     # Tampilkan di Streamlit
     st.pyplot(fig_pie)
 
-
-
     st.markdown("""
         Gambar di atas menunjukkan hasil segmentasi item penjualan menggunakan metode K-Means Clustering yang dibagi menjadi tiga kelompok berdasarkan karakteristik pergerakan item, yaitu Fast Moving Items, Seasonal or Irregular Moving Items, dan Slow Moving Items.
 
@@ -246,7 +244,6 @@ if page == "Hasil Klasterisasi":
                 "Cluster 3 : Slow Moving Items"
                 "Berdasarkan hasil visualisasi top 10 Fungsi Obat (Use) pada Cluster 3, dapat dilihat bahwa Vitamin kehamilan mendominasi secara signifikan di Cluster 3, diikuti oleh item dengan fungsi yang lebih spesifik termasuk gangguan metabolisme protein, pembesaran prostat, hiperplasia, dan GERD/tukak lambung, dimana fungsi-fungsi obat ini merupakan kondisi medis khusus dan biasanya ditangani dengan terapi jangka panjang namun intensitas rendah. Meskipun jumlah kuantitas setiap fungsi di cluster ini relatif kecil, hal ini sejalan dengan karakteristik Cluster 3, yaitu kelompok item yang muncul hanya dalam beberapa bulan, namun memiliki pola permintaan yang sangat stabil. Fungsi-fungsi dalam cluster ini cenderung terkait penggunaan khusus. Strategi pengadaan yang digunakan bisa berupa stok minimum yang tetap tersedia, dengan penyesuaian berdasarkan siklus perawatan pasien tertentu."
             )
-
 
 # Kesimpulan
     st.subheader("Kesimpulan")
