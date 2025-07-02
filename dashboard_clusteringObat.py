@@ -293,6 +293,7 @@ if page == "Optimalisasi":
     st.markdown("""
         Sumber: https://dataonline.bmkg.go.id.
         """)
+    st.write("Gambar 4.16 merupakan visualisasi curah hujan bulanan di Jakarta Pusat selama tahun 2024 yang menunjukkan pola fluktuasi yang cukup jelas antara musim hujan dan musim kemarau. Curah hujan tertinggi tercatat pada bulan Februari yang dikategorikan sebagai sangat tinggi, sementara bulan Januari, Maret, dan Desember berada dalam kategori tinggi. Kondisi ini mengindikasikan bahwa periode awal dan akhir tahun merupakan puncak musim hujan. Sebaliknya, curah hujan terendah terjadi pada bulan Mei dan Agustus yang tergolong dalam kategori rendah, mencerminkan masa puncak musim kemarau. Bulan-bulan lain seperti April, Juni, Juli, September, dan November menunjukkan curah hujan menengah, yang dapat diasosiasikan sebagai periode transisi antara musim hujan dan kemarau.")
     
     st.title("Optimalisasi Pengadaan Stok Obat")
 
