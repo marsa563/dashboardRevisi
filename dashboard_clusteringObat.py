@@ -391,8 +391,9 @@ if page == "Optimalisasi":
 
     st.subheader("Top 10 Item per Cluster, Curah Hujan, dan Bulan")
     st.markdown("""
-            Berikut merupakan daftar 10 besar item per Cluster berdasarkan Curah Hujan dan Bulan :
-        """)
+        Berikut merupakan daftar 10 besar item per Cluster berdasarkan Curah Hujan dan Bulan:
+    """)
+    
     # Peta nama bulan
     bulan_map = {
         1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April',
@@ -400,7 +401,7 @@ if page == "Optimalisasi":
         9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
     }
     
-    df = data_grouped_clustered
+    df = data_grouped_clustered.copy()
     
     # Tambahkan kolom Curah Hujan berdasarkan kolom 'Month'
     def kategori_curah_hujan(bulan):
@@ -427,19 +428,33 @@ if page == "Optimalisasi":
     # Filter hanya top 10
     df_top10 = df_filtered[df_filtered['Rank'] <= 10].drop(columns='Rank')
     
+    # ================== FILTER INTERAKTIF ================== #
+    # Pilihan filter
+    cluster_options = sorted(df_top10['Cluster'].unique())
+    bulan_options = df_top10['Month'].unique()
+    
+    selected_clusters = st.multiselect("Pilih Cluster:", options=cluster_options, default=cluster_options)
+    selected_bulan = st.multiselect("Pilih Bulan:", options=bulan_options, default=bulan_options)
+    
+    # Terapkan filter ke df_top10
+    df_top10_filtered = df_top10[
+        (df_top10['Cluster'].isin(selected_clusters)) &
+        (df_top10['Month'].isin(selected_bulan))
+    ]
+    
     # Urutkan data
-    df_top10 = df_top10.sort_values(by=['Cluster', 'Curah Hujan', 'Month', 'Qty'], ascending=[True, True, True, False])
+    df_top10_filtered = df_top10_filtered.sort_values(by=['Cluster', 'Curah Hujan', 'Month', 'Qty'], ascending=[True, True, True, False])
     
     # Tampilkan hasil
-    st.dataframe(df_top10.reset_index(drop=True), use_container_width=True)
-
-    # Judul dan deskripsi
+    st.dataframe(df_top10_filtered.reset_index(drop=True), use_container_width=True)
+    
+    # ================== RINGKASAN TOTAL PENJUALAN ================== #
     st.subheader("Rekapitulasi Total Penjualan (Qty) Obat Perbulan")
     st.write("Berikut ini merupakan jumlah total permintaan obat berdasarkan hasil cluster, dikategorikan menurut curah hujan dan bulan:")
     
     # Group data berdasarkan Cluster, Curah Hujan, dan Bulan
     cluster_month_summary = (
-        df_top10.groupby(['Cluster', 'Curah Hujan', 'Month'])['Qty']
+        df_top10_filtered.groupby(['Cluster', 'Curah Hujan', 'Month'])['Qty']
         .sum()
         .reset_index()
         .sort_values(by=['Cluster', 'Curah Hujan', 'Qty'], ascending=[True, True, False])
@@ -447,6 +462,7 @@ if page == "Optimalisasi":
     
     # Tampilkan hasil
     st.dataframe(cluster_month_summary, use_container_width=True)
+
 
     st.subheader("Ringkasan")
 
